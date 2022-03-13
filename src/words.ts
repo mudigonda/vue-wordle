@@ -18,11 +18,39 @@ export function getWordOfTheDay() {
   const start = new Date(2022, 0, 0)
   const diff = Number(now) - Number(start)
   let day = Math.floor(diff / (1000 * 60 * 60 * 24))
-  while (day > answers.length) {
-    day -= answers.length
+  while (day > words.length) {
+    day -= words.length
   }
-  return answers[day]
+  return words[1]
 }
+
+const words = [
+'earth',
+'flora',
+'fauna',
+'grime',
+'Humus',
+'Firma',
+'Mulch',
+'Sward',
+'Loess',
+'Cloud',
+'Rains',
+'River',
+'Grain',
+'Grass',
+'Decay',
+'Swamp',
+'Muddy',
+'Banks',
+'Loamy',
+'Gault',
+'Peaty',
+'Silty',
+'Sandy',
+'Slush',
+'Gumbo'
+]
 
 // copied from Wordle source
 const answers = [
@@ -13003,4 +13031,4 @@ const allowedGuesses = [
   'zymic'
 ]
 
-export const allWords = [...answers, ...allowedGuesses]
+export const allWords = [...answers, ...words,  ...allowedGuesses]
