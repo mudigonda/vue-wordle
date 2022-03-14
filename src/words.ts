@@ -21,7 +21,7 @@ export function getWordOfTheDay() {
   while (day > words.length) {
     day -= words.length
   }
-  return words[1]
+  return words[day]
 }
 
 const words = [
@@ -29,7 +29,7 @@ const words = [
 'flora',
 'fauna',
 'grime',
-'Humus',
+'humus',
 'Firma',
 'Mulch',
 'Sward',
