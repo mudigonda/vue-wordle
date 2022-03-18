@@ -26,6 +26,8 @@ let message = $ref('')
 let grid = $ref('')
 let shakeRowIndex = $ref(-1)
 let success = $ref(false)
+let info = $ref(false)
+let wordOfTheDay = $ref('')
 
 // Keep track of revealed letters for the virtual keyboard
 const letterStates: Record<string, LetterState> = $ref({})
@@ -169,27 +171,56 @@ function genResultGrid() {
     })
     .join('\n')
 }
+
+function getResultsText() {
+  let attempts = currentRowIndex+1;
+  return `#savesoil wordle ${attempts}/6\n${grid}`;
+  }
+
+function share() {
+ const el = document.createElement('textarea')
+ el.setAttribute('readonly', '')
+ el.style.position = 'absolute'
+ el.style.left = '-9999px'
+//  el.value = '1000 \n' + grid;
+ el.value = getResultsText();
+ document.body.appendChild(el)
+ el.select();
+ document.execCommand('copy')
+ info = true;
+ document.body.removeChild(el)
+ setTimeout(function() {
+        info = false;
+      }, 1000);
+  }
 </script>
 
 <template>
   <Transition>
     <div class="message" v-if="message">
-      {{ message }}
-      <pre v-if="grid">{{ grid }}</pre>
+      <img src="https://images.sadhguru.org/d/46272/1647473411-mar-17-20190727_sun_0804-e.jpg" alt="savesoil" width="450">
+      <div v-if="grid" >
+        <pre id="gridRef" ref="gridRef">{{ grid }}</pre>
+      </div>
+      <div class="share-wrapper">
+        <button class="share-icon" @click="share">Share <i class="fa fa-share-alt"></i></button>
+      <p v-if="info" class="share-text">Copied results to clipboard!</p>
+      </div>
     </div>
   </Transition>
   <header>
-    <h1>VVORDLE</h1>
-    <a
+    <h1>WORDLE</h1>
+    <!-- <a
       id="source-link"
       href="https://github.com/yyx990803/vue-wordle"
       target="_blank"
       >Source</a
-    >
+    > -->
   </header>
   <div id="board">
     <div
       v-for="(row, index) in board"
+      :key="index"
       :class="[
         'row',
         shakeRowIndex === index && 'shake',
@@ -198,6 +229,7 @@ function genResultGrid() {
     >
       <div
         v-for="(tile, index) in row"
+        :key="index"
         :class="['tile', tile.letter && 'filled', tile.state && 'revealed']"
       >
         <div class="front" :style="{ transitionDelay: `${index * 300}ms` }">
@@ -245,6 +277,25 @@ function genResultGrid() {
 }
 .message.v-leave-to {
   opacity: 0;
+}
+.share-wrapper{
+     position: relative;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.share-icon {
+    background-color: rgb(126, 181, 73);
+    color: white;
+    padding: 5px 10px;
+    border: 1px solid rgb(126, 181, 73);
+    outline: none;
+    cursor: pointer;
+  }
+.share-text {
+    position: absolute;
+    font-size: 12px;
+    left: 30%;
+    opacity: 0.5;
 }
 .row {
   display: grid;

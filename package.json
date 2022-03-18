@@ -2,7 +2,7 @@
   "name": "vue-wordle",
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite --host 0,0,0,0",
+    "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview"
   },
