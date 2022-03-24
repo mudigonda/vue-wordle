@@ -1,64 +1,65 @@
 <script setup lang="ts">
-import { onUnmounted } from 'vue'
-import { getWordOfTheDay, allWords } from './words'
-import Keyboard from './Keyboard.vue'
-import { LetterState } from './types'
+import { onUnmounted } from 'vue';
+import { getWordOfTheDay, allWords } from './words';
+import Keyboard from './Keyboard.vue';
+import { LetterState } from './types';
 
 // Get word of the day
-const answer = getWordOfTheDay()
+const answer = getWordOfTheDay();
 
 // Board state. Each tile is represented as { letter, state }
 const board = $ref(
   Array.from({ length: 6 }, () =>
     Array.from({ length: 5 }, () => ({
       letter: '',
-      state: LetterState.INITIAL
+      state: LetterState.INITIAL,
     }))
   )
-)
+);
 
 // Current active row.
-let currentRowIndex = $ref(0)
-const currentRow = $computed(() => board[currentRowIndex])
+let currentRowIndex = $ref(0);
+const currentRow = $computed(() => board[currentRowIndex]);
 
 // Feedback state: message and shake
-let message = $ref('')
-let grid = $ref('')
-let shakeRowIndex = $ref(-1)
-let success = $ref(false)
-let info = $ref(false)
-let wordOfTheDay = $ref('')
+let message = $ref('');
+let grid = $ref('');
+let shakeRowIndex = $ref(-1);
+let success = $ref(false);
+let info = $ref(false);
+let showModal = $ref(false);
+let wordOfTheDay = $ref('');
 
 // Keep track of revealed letters for the virtual keyboard
-const letterStates: Record<string, LetterState> = $ref({})
+const letterStates: Record<string, LetterState> = $ref({});
 
 // Handle keyboard input.
-let allowInput = true
+let allowInput = true;
 
-const onKeyup = (e: KeyboardEvent) => onKey(e.key)
+const onKeyup = (e: KeyboardEvent) => onKey(e.key);
 
-window.addEventListener('keyup', onKeyup)
+window.addEventListener('keyup', onKeyup);
 
 onUnmounted(() => {
-  window.removeEventListener('keyup', onKeyup)
-})
+  window.removeEventListener('keyup', onKeyup);
+});
 
 function onKey(key: string) {
-  if (!allowInput) return
+  if (!allowInput) return;
   if (/^[a-zA-Z]$/.test(key)) {
-    fillTile(key.toLowerCase())
+    fillTile(key.toLowerCase());
   } else if (key === 'Backspace') {
-    clearTile()
+    clearTile();
   } else if (key === 'Enter') {
-    completeRow()
+    completeRow();
   }
 }
 
 function fillTile(letter: string) {
   for (const tile of currentRow) {
     if (!tile.letter) {
-      tile.letter = letter
-      break
+      tile.letter = letter;
+      break;
     }
   }
 }
@@ -66,150 +67,177 @@ function fillTile(letter: string) {
 function clearTile() {
   for (const tile of [...currentRow].reverse()) {
     if (tile.letter) {
-      tile.letter = ''
-      break
+      tile.letter = '';
+      break;
     }
   }
 }
 
 function completeRow() {
   if (currentRow.every((tile) => tile.letter)) {
-    const guess = currentRow.map((tile) => tile.letter).join('')
+    const guess = currentRow.map((tile) => tile.letter).join('');
     if (!allWords.includes(guess) && guess !== answer) {
-      shake()
-      showMessage(`Not in word list`)
-      return
+      shake();
+      showMessage(`Not in word list`);
+      return;
     }
 
-    const answerLetters: (string | null)[] = answer.split('')
+    const answerLetters: (string | null)[] = answer.split('');
     // first pass: mark correct ones
     currentRow.forEach((tile, i) => {
       if (answerLetters[i] === tile.letter) {
-        tile.state = letterStates[tile.letter] = LetterState.CORRECT
-        answerLetters[i] = null
+        tile.state = letterStates[tile.letter] = LetterState.CORRECT;
+        answerLetters[i] = null;
       }
-    })
+    });
     // second pass: mark the present
     currentRow.forEach((tile) => {
       if (!tile.state && answerLetters.includes(tile.letter)) {
-        tile.state = LetterState.PRESENT
-        answerLetters[answerLetters.indexOf(tile.letter)] = null
+        tile.state = LetterState.PRESENT;
+        answerLetters[answerLetters.indexOf(tile.letter)] = null;
         if (!letterStates[tile.letter]) {
-          letterStates[tile.letter] = LetterState.PRESENT
+          letterStates[tile.letter] = LetterState.PRESENT;
         }
       }
-    })
+    });
     // 3rd pass: mark absent
     currentRow.forEach((tile) => {
       if (!tile.state) {
-        tile.state = LetterState.ABSENT
+        tile.state = LetterState.ABSENT;
         if (!letterStates[tile.letter]) {
-          letterStates[tile.letter] = LetterState.ABSENT
+          letterStates[tile.letter] = LetterState.ABSENT;
         }
       }
-    })
+    });
 
-    allowInput = false
+    allowInput = false;
     if (currentRow.every((tile) => tile.state === LetterState.CORRECT)) {
       // yay!
       setTimeout(() => {
-        grid = genResultGrid()
+        grid = genResultGrid();
         showMessage(
           ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'][
             currentRowIndex
           ],
-          -1
-        )
-        success = true
-      }, 1600)
+          500
+        );
+        success = true;
+        setTimeout(() => {
+          showModal = true;
+        }, 1000);
+      }, 1600);
     } else if (currentRowIndex < board.length - 1) {
       // go the next row
-      currentRowIndex++
+      currentRowIndex++;
       setTimeout(() => {
-        allowInput = true
-      }, 1600)
+        allowInput = true;
+      }, 1600);
     } else {
       // game over :(
       setTimeout(() => {
-        showMessage(answer.toUpperCase(), -1)
-      }, 1600)
+        showMessage(answer.toUpperCase(), -1);
+      }, 1600);
     }
   } else {
-    shake()
-    showMessage('Not enough letters')
+    shake();
+    showMessage('Not enough letters');
   }
 }
 
 function showMessage(msg: string, time = 1000) {
-  message = msg
+  message = msg;
   if (time > 0) {
     setTimeout(() => {
-      message = ''
-    }, time)
+      message = '';
+    }, time);
   }
 }
 
 function shake() {
-  shakeRowIndex = currentRowIndex
+  shakeRowIndex = currentRowIndex;
   setTimeout(() => {
-    shakeRowIndex = -1
-  }, 1000)
+    shakeRowIndex = -1;
+  }, 1000);
 }
 
 const icons = {
   [LetterState.CORRECT]: '🟩',
   [LetterState.PRESENT]: '🟨',
   [LetterState.ABSENT]: '⬜',
-  [LetterState.INITIAL]: null
-}
+  [LetterState.INITIAL]: null,
+};
 
 function genResultGrid() {
   return board
     .slice(0, currentRowIndex + 1)
     .map((row) => {
-      return row.map((tile) => icons[tile.state]).join('')
+      return row.map((tile) => icons[tile.state]).join('');
     })
-    .join('\n')
+    .join('\n');
 }
 
 function getResultsText() {
-  let attempts = currentRowIndex+1;
+  let attempts = currentRowIndex + 1;
   return `#savesoil wordle ${attempts}/6\n${grid}`;
-  }
+}
 
 function share() {
- const el = document.createElement('textarea')
- el.setAttribute('readonly', '')
- el.style.position = 'absolute'
- el.style.left = '-9999px'
-//  el.value = '1000 \n' + grid;
- el.value = getResultsText();
- document.body.appendChild(el)
- el.select();
- document.execCommand('copy')
- info = true;
- document.body.removeChild(el)
- setTimeout(function() {
-        info = false;
-      }, 1000);
-  }
+  const el = document.createElement('textarea');
+  el.setAttribute('readonly', '');
+  el.style.position = 'absolute';
+  el.style.left = '-9999px';
+  el.value = getResultsText();
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  info = true;
+  document.body.removeChild(el);
+  setTimeout(function () {
+    info = false;
+  }, 1000);
+}
 </script>
 
 <template>
   <Transition>
     <div class="message" v-if="message">
-      <img src="https://images.sadhguru.org/d/46272/1647473411-mar-17-20190727_sun_0804-e.jpg" alt="savesoil" width="450">
-      <div v-if="grid" >
-        <pre id="gridRef" ref="gridRef">{{ grid }}</pre>
-      </div>
-      <div class="share-wrapper">
-        <button class="share-icon" @click="share">Share <i class="fa fa-share-alt"></i></button>
-      <p v-if="info" class="share-text">Copied results to clipboard!</p>
+      {{ message }}
+    </div>
+  </Transition>
+  <Transition name="fade" appear>
+    <div class="modal-overlay" v-if="showModal">
+      <div class="modal">
+        <div class="close-icon" @click="showModal = false">
+          <i class="fa fa-times"></i>
+        </div>
+        <a
+          href="https://consciousplanet.org/"
+          target="_blank"
+          style="cursor: pointer"
+        >
+          <img
+            class="savesoil-img"
+            v-if="grid"
+            src="http://savesoil.me/wp-content/uploads/2022/03/conciousplanet-savesoil.jpg"
+            alt="savesoil"
+          />
+        </a>
+        <div class="results-wrapper">
+          <div v-if="grid" class="results-grid">
+            <pre id="gridRef" ref="gridRef">{{ grid }}</pre>
+          </div>
+          <div v-if="grid" class="share-wrapper">
+            <button class="share-icon" @click="share">
+              Share &nbsp;&nbsp;&nbsp; <i class="fa fa-share-alt"></i>
+            </button>
+            <p v-if="info" class="share-text">Copied results to clipboard!</p>
+          </div>
+        </div>
       </div>
     </div>
   </Transition>
   <header>
-    <h1>WORDLE</h1>
+    <h1>SAVESOIL WORDLE</h1>
     <!-- <a
       id="source-link"
       href="https://github.com/yyx990803/vue-wordle"
@@ -224,7 +252,7 @@ function share() {
       :class="[
         'row',
         shakeRowIndex === index && 'shake',
-        success && currentRowIndex === index && 'jump'
+        success && currentRowIndex === index && 'jump',
       ]"
     >
       <div
@@ -239,7 +267,7 @@ function share() {
           :class="['back', tile.state]"
           :style="{
             transitionDelay: `${index * 300}ms`,
-            animationDelay: `${index * 100}ms`
+            animationDelay: `${index * 100}ms`,
           }"
         >
           {{ tile.letter }}
@@ -278,24 +306,32 @@ function share() {
 .message.v-leave-to {
   opacity: 0;
 }
-.share-wrapper{
-     position: relative;
-    margin-bottom: 20px;
-    text-align: center;
+.results-wrapper {
+  display: flex;
+  margin: 10px 0px 20px 0px;
+  align-items: center;
+}
+.results-grid {
+  flex: 3;
+}
+.share-wrapper {
+  position: relative;
+  text-align: left;
+  flex: 2;
 }
 .share-icon {
-    background-color: rgb(126, 181, 73);
-    color: white;
-    padding: 5px 10px;
-    border: 1px solid rgb(126, 181, 73);
-    outline: none;
-    cursor: pointer;
-  }
+  background-color: #65a135;
+  color: white;
+  padding: 10px 30px;
+  border: 1px solid #65a135;
+  outline: none;
+  cursor: pointer;
+  margin: 0 10px;
+}
 .share-text {
-    position: absolute;
-    font-size: 12px;
-    left: 30%;
-    opacity: 0.5;
+  position: absolute;
+  font-size: 12px;
+  opacity: 0.5;
 }
 .row {
   display: grid;
@@ -344,6 +380,48 @@ function share() {
 }
 .tile.revealed .back {
   transform: rotateX(0deg);
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 98;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 1s ease-in;
+  z-index: 99;
+  width: 100%;
+  max-width: 45%;
+  background-color: #fff;
+  border-radius: 5px;
+  padding: 10px 0;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+.close-icon {
+  cursor: pointer;
+  opacity: 0.5;
+  cursor: pointer;
+  opacity: 0.5;
+  text-align: right;
+  margin-right: 15px;
+}
+.savesoil-img {
+  width: 450px;
 }
 
 @keyframes zoom {
@@ -420,6 +498,14 @@ function share() {
 @media (max-height: 680px) {
   .tile {
     font-size: 3vh;
+  }
+}
+@media only screen and (max-width: 600px) {
+  .modal {
+    max-width: unset;
+  }
+  .savesoil-img {
+    width: 350px;
   }
 }
 </style>
